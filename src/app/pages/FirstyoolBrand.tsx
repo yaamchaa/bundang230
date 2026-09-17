@@ -1,6 +1,6 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, useCallback } from 'react';
 import { Link } from 'react-router';
-import { ChevronDown } from 'lucide-react';
+import { ChevronDown, X } from 'lucide-react';
 import brandBg from '../../assets/images/fyb.jpg';
 import l1Image from '../../assets/images/l1.jpg';
 import l2Image from '../../assets/images/l2.jpg';
@@ -141,6 +141,14 @@ export function FirstyoolBrand() {
 }
 
 function IntroductionTab() {
+  const [lightboxImage, setLightboxImage] = useState('');
+  const [lightboxOpen, setLightboxOpen] = useState(false);
+
+  const openLightbox = useCallback((src: string) => {
+    setLightboxImage(src);
+    setLightboxOpen(true);
+  }, []);
+
   const [formData, setFormData] = useState({
     name: '',
     phone: '',
@@ -251,11 +259,9 @@ function IntroductionTab() {
       <article className="max-w-[1200px] mx-auto px-0 md:px-6 pt-[130px]">
         <div className="flex flex-col md:flex-row gap-6 md:gap-11">
           <figure className="w-full md:w-[400px] h-[246px] flex-shrink-0">
-            <img
-              src={in1Image}
-              alt="Greenery and Everyday Rest"
-              className="w-full h-full object-cover"
-            />
+            <button type="button" onClick={() => openLightbox(in1Image)} className="block w-full h-full cursor-zoom-in">
+              <img src={in1Image} alt="Greenery and Everyday Rest" className="w-full h-full object-cover" />
+            </button>
           </figure>
 
           <div className="flex-1 px-6 md:px-0">
@@ -282,11 +288,9 @@ function IntroductionTab() {
       <article className="max-w-[1200px] mx-auto px-0 md:px-6 pt-[130px]">
         <div className="flex flex-col md:flex-row gap-6 md:gap-11">
           <figure className="w-full md:w-[400px] h-[246px] flex-shrink-0">
-            <img
-              src={in2Image}
-              alt="For Future Valuel"
-              className="w-full h-full object-cover"
-            />
+            <button type="button" onClick={() => openLightbox(in2Image)} className="block w-full h-full cursor-zoom-in">
+              <img src={in2Image} alt="For Future Valuel" className="w-full h-full object-cover" />
+            </button>
           </figure>
 
           <div className="flex-1 px-6 md:px-0">
@@ -448,19 +452,15 @@ function IntroductionTab() {
    <p className="text-sm font-light text-gray-500">※ 상기 계획안은 추후 변동 될 수 있음 (주민 이해를 돕기 위한 이미지입니다.)</p>
   <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
     <div className="aspect-[4/3] overflow-hidden">
-      <img
-        src={g3Image}
-        alt="Concept Sketch 1"
-        className="w-full h-full object-cover"
-      />
+      <button type="button" onClick={() => openLightbox(g3Image)} className="block w-full h-full cursor-zoom-in">
+        <img src={g3Image} alt="Concept Sketch 1" className="w-full h-full object-cover" />
+      </button>
     </div>
 
     <div className="aspect-[4/3] overflow-hidden">
-      <img
-        src={in4Image}
-        alt="Concept Sketch 2"
-        className="w-full h-full object-cover"
-      />
+      <button type="button" onClick={() => openLightbox(in4Image)} className="block w-full h-full cursor-zoom-in">
+        <img src={in4Image} alt="Concept Sketch 2" className="w-full h-full object-cover" />
+      </button>
     </div>
   </div>
 </article>
@@ -556,11 +556,9 @@ function IntroductionTab() {
         <div className="max-w-[1200px] mx-auto px-0 md:px-6 pt-[30px]">
           <div className="flex flex-col md:flex-row gap-6 md:gap-11">
             <figure className="w-full md:w-[400px] h-[246px] flex-shrink-0">
-              <img
-                src={in5Image}
-                alt="Site Plan"
-                className="w-full h-full object-cover"
-              />
+              <button type="button" onClick={() => openLightbox(in5Image)} className="block w-full h-full cursor-zoom-in">
+                <img src={in5Image} alt="Site Plan" className="w-full h-full object-cover" />
+              </button>
             </figure>
 
             <div className="flex-1 px-6 md:px-0 md:py-[70px]">
@@ -588,11 +586,9 @@ function IntroductionTab() {
       <h3 className="text-2xl font-light px-6 md:px-0 mb-6">165.95m2 layout</h3>
         <p className="text-sm font-light text-gray-500">※ 상기 도면은 주민 이해를 돕기 위한 예시 이미지입니다.</p>
       <div className="aspect-[4/3] overflow-hidden mb-20">
-        <img
-          src={in9Image}
-          alt="Type A Layout"
-          className="w-full h-full object-cover"
-        />
+        <button type="button" onClick={() => openLightbox(in9Image)} className="block w-full h-full cursor-zoom-in">
+          <img src={in9Image} alt="Type A Layout" className="w-full h-full object-cover" />
+        </button>
       </div>
 
       <table className="w-full font-light border-t-2 border-black">
@@ -634,11 +630,9 @@ function IntroductionTab() {
       <h3 className="text-2xl font-light px-6 md:px-0 mb-6">142.95m2 layout</h3>
         <p className="text-sm font-light text-gray-500">※ 상기 도면은 주민 이해를 돕기 위한 예시 이미지입니다.</p>
       <div className="aspect-[4/3] overflow-hidden mb-20">
-        <img
-          src={in10Image}
-          alt="Type B Layout"
-          className="w-full h-full object-cover"
-        />
+        <button type="button" onClick={() => openLightbox(in10Image)} className="block w-full h-full cursor-zoom-in">
+          <img src={in10Image} alt="Type B Layout" className="w-full h-full object-cover" />
+        </button>
       </div>
 
       <table className="w-full font-light border-t-2 border-black">
@@ -683,19 +677,15 @@ function IntroductionTab() {
           <p className="text-sm font-light text-gray-500">※ 상기 이미지는 주민 이해를 돕기 위한 예시입니다.</p>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
           <div className="aspect-[4/3] overflow-hidden mb-20">
-          <img
-            src={in6Image}
-            alt="Mass Diagram 1"
-            className="w-full h-full object-cover"
-          />
-         </div>
-            <div className="aspect-[4/3] overflow-hidden mb-20">
-          <img
-            src={in7Image}
-            alt="Mass Diagram 2"
-            className="w-full h-full object-cover"
-          />
-         </div>     
+            <button type="button" onClick={() => openLightbox(in6Image)} className="block w-full h-full cursor-zoom-in">
+              <img src={in6Image} alt="Mass Diagram 1" className="w-full h-full object-cover" />
+            </button>
+          </div>
+          <div className="aspect-[4/3] overflow-hidden mb-20">
+            <button type="button" onClick={() => openLightbox(in7Image)} className="block w-full h-full cursor-zoom-in">
+              <img src={in7Image} alt="Mass Diagram 2" className="w-full h-full object-cover" />
+            </button>
+          </div>     
         </div>
       </article>
 
@@ -706,11 +696,9 @@ function IntroductionTab() {
         <div className="max-w-[1200px] mx-auto px-0 md:px-6 pt-[50px]">
           <div className="flex flex-col md:flex-row gap-6 md:gap-11">
             <figure className="w-full md:w-[400px] h-[246px] flex-shrink-0">
-              <img
-                src={in8Image}
-                alt="Designer JS.COOPER"
-                className="w-full h-full object-cover"
-              />
+              <button type="button" onClick={() => openLightbox(in8Image)} className="block w-full h-full cursor-zoom-in">
+                <img src={in8Image} alt="Designer JS.COOPER" className="w-full h-full object-cover" />
+              </button>
             </figure>
 
             <div className="flex-1 px-6 md:px-0 md:py-[60px]">
@@ -759,7 +747,13 @@ function IntroductionTab() {
       </article>
 
       {/* Subscribe Now Form */}
-      
+
+      {lightboxOpen && (
+        <Lightbox
+          image={lightboxImage}
+          onClose={() => setLightboxOpen(false)}
+        />
+      )}
     </div>
   );
 }
@@ -1102,6 +1096,49 @@ function BITab() {
     </div>
   </div>
 </article>
+    </div>
+  );
+}
+
+function Lightbox({
+  image,
+  onClose,
+}: {
+  image: string;
+  onClose: () => void;
+}) {
+  useEffect(() => {
+    const handleKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose();
+    };
+    window.addEventListener('keydown', handleKey);
+    document.body.style.overflow = 'hidden';
+    return () => {
+      window.removeEventListener('keydown', handleKey);
+      document.body.style.overflow = '';
+    };
+  }, [onClose]);
+
+  return (
+    <div
+      className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/60"
+      onClick={onClose}
+    >
+      <button
+        type="button"
+        onClick={onClose}
+        className="absolute top-4 right-4 text-white/70 hover:text-white transition-colors"
+        aria-label="닫기"
+      >
+        <X className="w-8 h-8" />
+      </button>
+
+      <img
+        src={image}
+        alt=""
+        className="h-[75vh] w-auto object-contain select-none"
+        onClick={(e) => e.stopPropagation()}
+      />
     </div>
   );
 }
