@@ -29,7 +29,7 @@ export function Footer() {
               <h3 className="text-xs text-BLACK-400 mb-4"> </h3>
               <div className="space-y-2 text-xs text-gray-600">
                 
-                <p className="text-center font-light text-xs">대표 오 미 연</p>
+                <p className="text-center font-light text-xs">대표 정 태 주</p>
                 
               </div>
             </div>
