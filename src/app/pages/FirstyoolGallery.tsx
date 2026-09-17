@@ -1,5 +1,5 @@
-import { useEffect, useRef, useState } from 'react';
-import { ChevronDown } from 'lucide-react';
+import { useEffect, useRef, useState, useCallback } from 'react';
+import { ChevronDown, X, ChevronLeft, ChevronRight } from 'lucide-react';
 import brandBg from '../../assets/images/main-5.jpg';
 import g1Image from '../../assets/images/g1.jpg';
 import g2Image from '../../assets/images/g2.jpg';
@@ -41,6 +41,15 @@ export function FirstyoolGallery() {
   const [activeTab, setActiveTab] = useState('feature');
   const tabSentinelRef = useRef<HTMLDivElement | null>(null);
   const tabSectionRef = useRef<HTMLDivElement | null>(null);
+  const [lightboxImages, setLightboxImages] = useState<string[]>([]);
+  const [lightboxIndex, setLightboxIndex] = useState(0);
+  const [lightboxOpen, setLightboxOpen] = useState(false);
+
+  const openLightbox = useCallback((images: string[], index: number) => {
+    setLightboxImages(images);
+    setLightboxIndex(index);
+    setLightboxOpen(true);
+  }, []);
 
   useEffect(() => {
     const sentinel = tabSentinelRef.current;
@@ -151,6 +160,7 @@ export function FirstyoolGallery() {
         {activeTab === 'feature' && (
           <GalleryTab
             currentTabLabel="FEATURE"
+            onImageClick={openLightbox}
             items={[
               {
                 title: 'Club House',
@@ -190,6 +200,7 @@ export function FirstyoolGallery() {
         {activeTab === 'inside' && (
           <GalleryTab
             currentTabLabel="INSIDE"
+            onImageClick={openLightbox}
             items={[
               {
                 title: 'Living bath',
@@ -322,6 +333,15 @@ export function FirstyoolGallery() {
           />
         )}
       </div>
+
+      {lightboxOpen && (
+        <Lightbox
+          images={lightboxImages}
+          index={lightboxIndex}
+          onClose={() => setLightboxOpen(false)}
+          onNavigate={setLightboxIndex}
+        />
+      )}
     </div>
   );
 }
@@ -330,10 +350,12 @@ function GalleryTab({
   currentTabLabel,
   items,
   staggerStartIndex,
+  onImageClick,
 }: {
   currentTabLabel: string;
   items: GalleryItem[];
   staggerStartIndex: number;
+  onImageClick?: (images: string[], index: number) => void;
 }) {
   return (
     <div className="pb-[200px]">
@@ -356,7 +378,14 @@ function GalleryTab({
               key={`${currentTabLabel}-${index}`}
               className={index >= staggerStartIndex ? 'mt-0 md:mt-[50px]' : 'mt-0'}
             >
-              <GalleryCard {...item} />
+              <GalleryCard
+                {...item}
+                onImageClick={
+                  onImageClick && !item.href
+                    ? () => onImageClick(items.map((i) => i.image), index)
+                    : undefined
+                }
+              />
             </div>
           ))}
         </div>
@@ -371,12 +400,14 @@ function GalleryCard({
   image,
   href,
   className = '',
+  onImageClick,
 }: {
   title: string;
   subtitle: string;
   image: string;
   href?: string;
   className?: string;
+  onImageClick?: () => void;
 }) {
   return (
     <div className={`group block ${className}`}>
@@ -395,11 +426,17 @@ function GalleryCard({
             />
           </a>
         ) : (
-          <img
-            src={image}
-            alt={title}
-            className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
-          />
+          <button
+            type="button"
+            onClick={onImageClick}
+            className="block w-full h-full cursor-zoom-in"
+          >
+            <img
+              src={image}
+              alt={title}
+              className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+            />
+          </button>
         )}
       </div>
 
@@ -425,6 +462,85 @@ function GalleryCard({
           </div>
         </div>
       </div>
+    </div>
+  );
+}
+
+function Lightbox({
+  images,
+  index,
+  onClose,
+  onNavigate,
+}: {
+  images: string[];
+  index: number;
+  onClose: () => void;
+  onNavigate: (index: number) => void;
+}) {
+  const prev = () => onNavigate((index - 1 + images.length) % images.length);
+  const next = () => onNavigate((index + 1) % images.length);
+
+  useEffect(() => {
+    const handleKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose();
+      if (e.key === 'ArrowLeft') prev();
+      if (e.key === 'ArrowRight') next();
+    };
+    window.addEventListener('keydown', handleKey);
+    document.body.style.overflow = 'hidden';
+    return () => {
+      window.removeEventListener('keydown', handleKey);
+      document.body.style.overflow = '';
+    };
+  });
+
+  return (
+    <div
+      className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/60"
+      onClick={onClose}
+    >
+      <button
+        type="button"
+        onClick={onClose}
+        className="absolute top-4 right-4 text-white/70 hover:text-white transition-colors"
+        aria-label="닫기"
+      >
+        <X className="w-8 h-8" />
+      </button>
+
+      {images.length > 1 && (
+        <>
+          <button
+            type="button"
+            onClick={(e) => { e.stopPropagation(); prev(); }}
+            className="absolute left-4 text-white/70 hover:text-white transition-colors"
+            aria-label="이전"
+          >
+            <ChevronLeft className="w-10 h-10" />
+          </button>
+          <button
+            type="button"
+            onClick={(e) => { e.stopPropagation(); next(); }}
+            className="absolute right-4 text-white/70 hover:text-white transition-colors"
+            aria-label="다음"
+          >
+            <ChevronRight className="w-10 h-10" />
+          </button>
+        </>
+      )}
+
+      <img
+        src={images[index]}
+        alt=""
+        className="h-[75vh] w-auto object-contain select-none"
+        onClick={(e) => e.stopPropagation()}
+      />
+
+      {images.length > 1 && (
+        <div className="absolute bottom-4 left-1/2 -translate-x-1/2 text-white/50 text-sm font-light">
+          {index + 1} / {images.length}
+        </div>
+      )}
     </div>
   );
 }
