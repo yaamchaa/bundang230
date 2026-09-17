@@ -119,7 +119,6 @@ export const router = createBrowserRouter([
         ),
       },
     ],
-    },
-], {
-  basename: '/bundang230',
-});
+  },
+]);
+          
