@@ -15,6 +15,7 @@ function figmaAssetResolver() {
 }
 
 export default defineConfig({
+  base: '/bundang230/',
   plugins: [
     figmaAssetResolver(),
     react(),
