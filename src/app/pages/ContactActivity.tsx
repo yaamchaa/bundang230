@@ -1,5 +1,6 @@
 import { useEffect, useState, useMemo, useRef } from 'react';
-import { ChevronDown, Send, Search, Plus, Paperclip, MessageCircle, Users, Lock } from 'lucide-react';
+import { ChevronDown, Send, Search, Plus, Paperclip, MessageCircle, Users, Lock, Pencil, Trash2, X, Check } from 'lucide-react';
+import { supabase } from '../../lib/supabase';
 import brandBg from '../../assets/images/main-14.png';
 import organizationImage from '../../assets/images/organization.jpg';
 import vcImage from '../../assets/images/vc.jpg';
@@ -429,6 +430,15 @@ function OrganizationTab() {
   );
 }
 
+type ExpenseRow = {
+  id: string;
+  month: string;
+  item: string;
+  amount: string;
+  note: string;
+  sort_order: number;
+};
+
 function DevelopmentTab() {
   const expenseCategories = [
     {
@@ -457,69 +467,144 @@ function DevelopmentTab() {
     },
   ];
 
-  const monthOptions = [
-    { label: '2026.6월', value: '2026-06' },
-    { label: '2026.7월', value: '2026-07' },
-    { label: '2026.8월', value: '2026-08' },
-  ];
+  const ADMIN_EMAIL = '01030058829@admin.local';
 
-  const mockData: Record<
-    string,
-    { month: string; item: string; amount: string; note: string }[]
-  > = {
-    '2026-06': [
-      { month: '2026.06', item: '사무실 임차료 및 관리비', amount: '1,000,000원', note: '월 고정비' },
-      { month: '2026.06', item: '사무 임원 및 사무원 인건비', amount: '4,800,000원', note: '급여 및 실무 운영' },
-      { month: '2026.06', item: '토지등소유자 안내문 제작 및 우편 발송', amount: '1,180,000원', note: '토지등소유자 공지(홈페이지이용시 무료)' },
-      { month: '2026.06', item: '법률·세무 자문비', amount: '1,800,000원', note: '외부 자문' },
-      { month: '2026.06', item: '회의장 대관 및 회의 진행비', amount: '3.550,000원', note: '정기 회의(온라인총회 시 비용절감)' },
-      { month: '2026.06', item: '사무실 운영 및 소모품 구입', amount: '420,000원', note: '비품 구입' },
-      { month: '2026.06', item: 'PM 용역 관련 운영비', amount: '3,400,000원', note: '사업 추진 지원' },
-      { month: '2026.06', item: '문자 발송 및 온라인 관리비', amount: '2,180,000원', note: '소통 관리' },
-      { month: '2026.06', item: '등기 및 제증명 발급비', amount: '190,000원', note: '행정 처리' },
-    ],
-    '2026-07': [
-      { month: '2026.07', item: '법률·세무 자문비', amount: '1,800,000원', note: '외부 자문' },
-      { month: '2026.07', item: '회의장 대관 및 회의 진행비', amount: '1,550,000원', note: '정기 회의' },
-      { month: '2026.07', item: '사무실 운영 및 소모품 구입', amount: '420,000원', note: '비품 구입' },
-    ],
-    '2026-08': [
-      { month: '2026.08', item: 'PM 용역 관련 운영비', amount: '3,400,000원', note: '사업 추진 지원' },
-      { month: '2026.08', item: '문자 발송 및 온라인 관리비', amount: '2,180,000원', note: '소통 관리' },
-      { month: '2026.08', item: '등기 및 제증명 발급비', amount: '190,000원', note: '행정 처리' },
-    ],
-  };
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [userId, setUserId] = useState<string | null>(null);
+  const [availableMonths, setAvailableMonths] = useState<string[]>([]);
+  const [selectedMonth, setSelectedMonth] = useState('');
+  const [expenses, setExpenses] = useState<ExpenseRow[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const [selectedMonth, setSelectedMonth] = useState('2026-06');
-  const [expenses, setExpenses] = useState<
-    { month: string; item: string; amount: string; note: string }[]
-  >([]);
-  const [loading, setLoading] = useState(false);
+  type NewLine = { item: string; amount: string; note: string };
+  const emptyLine = (): NewLine => ({ item: '', amount: '', note: '' });
+
+  // 추가 폼 상태
+  const [showAddForm, setShowAddForm] = useState(false);
+  const [newMonth, setNewMonth] = useState('');
+  const [newLines, setNewLines] = useState<NewLine[]>([emptyLine()]);
+  const [saving, setSaving] = useState(false);
+
+  // 인라인 편집 상태
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editItem, setEditItem] = useState('');
+  const [editAmount, setEditAmount] = useState('');
+  const [editNote, setEditNote] = useState('');
 
   useEffect(() => {
-    const fetchExpenses = async () => {
-      setLoading(true);
-
-      try {
-        // 실제 서버 연결 시 사용
-        // const response = await fetch(`/api/operating-expenses?month=${selectedMonth}`);
-        // if (!response.ok) throw new Error('데이터 조회 실패');
-        // const data = await response.json();
-        // setExpenses(data);
-
-        // 현재는 예시 데이터
-        await new Promise((resolve) => setTimeout(resolve, 300));
-        setExpenses(mockData[selectedMonth] || []);
-      } catch (error) {
-        console.error('운영비 데이터 조회 오류:', error);
-        setExpenses([]);
-      } finally {
-        setLoading(false);
+    const init = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        setUserId(user.id);
+        setIsAdmin(user.email?.toLowerCase() === ADMIN_EMAIL);
       }
+      await fetchMonths();
     };
+    init();
+  }, []);
 
-    fetchExpenses();
+  useEffect(() => {
+    if (selectedMonth) fetchExpenses(selectedMonth);
   }, [selectedMonth]);
+
+  const fetchMonths = async () => {
+    const { data, error } = await supabase
+      .from('operating_expenses')
+      .select('month')
+      .order('month', { ascending: false });
+
+    if (error) { console.error(error); return; }
+
+    const unique = [...new Set((data ?? []).map((r: any) => r.month as string))];
+    setAvailableMonths(unique);
+    if (unique.length > 0) setSelectedMonth(unique[0]);
+    else setLoading(false);
+  };
+
+  const fetchExpenses = async (month: string) => {
+    setLoading(true);
+    const { data, error } = await supabase
+      .from('operating_expenses')
+      .select('*')
+      .eq('month', month)
+      .order('sort_order', { ascending: true });
+
+    if (error) console.error(error);
+    setExpenses((data as ExpenseRow[]) ?? []);
+    setLoading(false);
+  };
+
+  const updateLine = (idx: number, field: keyof NewLine, value: string) => {
+    setNewLines((prev) => prev.map((l, i) => i === idx ? { ...l, [field]: value } : l));
+  };
+
+  const addLine = () => setNewLines((prev) => [...prev, emptyLine()]);
+
+  const removeLine = (idx: number) =>
+    setNewLines((prev) => prev.length === 1 ? prev : prev.filter((_, i) => i !== idx));
+
+  const handleAdd = async () => {
+    const month = newMonth.trim();
+    if (!month) { alert('월을 입력해 주세요. (예: 2026-09)'); return; }
+    const validLines = newLines.filter((l) => l.item.trim() && l.amount.trim());
+    if (validLines.length === 0) {
+      alert('지출 항목과 금액을 하나 이상 입력해 주세요.');
+      return;
+    }
+    setSaving(true);
+    const baseOrder = expenses.length > 0
+      ? Math.max(...expenses.map((e) => e.sort_order)) + 1
+      : 0;
+    const rows = validLines.map((l, i) => ({
+      month,
+      item: l.item.trim(),
+      amount: l.amount.trim(),
+      note: l.note.trim(),
+      sort_order: baseOrder + i,
+      created_by: userId,
+    }));
+    const { error } = await supabase.from('operating_expenses').insert(rows);
+    setSaving(false);
+    if (error) { alert('저장 실패: ' + error.message); return; }
+    setNewMonth('');
+    setNewLines([emptyLine()]);
+    setShowAddForm(false);
+    await fetchMonths();
+    if (month === selectedMonth) fetchExpenses(selectedMonth);
+    else setSelectedMonth(month);
+  };
+
+  const startEdit = (row: ExpenseRow) => {
+    setEditingId(row.id);
+    setEditItem(row.item);
+    setEditAmount(row.amount);
+    setEditNote(row.note);
+  };
+
+  const handleSaveEdit = async (id: string) => {
+    setSaving(true);
+    const { error } = await supabase
+      .from('operating_expenses')
+      .update({ item: editItem.trim(), amount: editAmount.trim(), note: editNote.trim() })
+      .eq('id', id);
+    setSaving(false);
+    if (error) { alert('수정 실패: ' + error.message); return; }
+    setEditingId(null);
+    fetchExpenses(selectedMonth);
+  };
+
+  const handleDelete = async (id: string) => {
+    if (!confirm('이 항목을 삭제하시겠습니까?')) return;
+    const { error } = await supabase.from('operating_expenses').delete().eq('id', id);
+    if (error) { alert('삭제 실패: ' + error.message); return; }
+    fetchExpenses(selectedMonth);
+    fetchMonths();
+  };
+
+  const displayMonth = (m: string) => {
+    const [year, mon] = m.split('-');
+    return `${year}.${mon}월`;
+  };
 
   const principles = [
     '운영비는 준비위 운영과 사업 추진 목적에 한해 사용합니다.',
@@ -599,9 +684,9 @@ function DevelopmentTab() {
 
         <section>
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
-            <h3 className="text-xl md:text-2xl font-light">월별 지출 내역 (예시)</h3>
+            <h3 className="text-xl md:text-2xl font-light">월별 지출 내역</h3>
 
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-3 flex-wrap">
               <label htmlFor="expenseMonth" className="text-sm text-gray-500 font-light">
                 조회 월
               </label>
@@ -611,55 +696,228 @@ function DevelopmentTab() {
                 onChange={(e) => setSelectedMonth(e.target.value)}
                 className="min-w-[160px] border border-gray-300 bg-white px-4 py-2 text-sm text-gray-700 outline-none focus:border-black"
               >
-                {monthOptions.map((option) => (
-                  <option key={option.value} value={option.value}>
-                    {option.label}
-                  </option>
+                {availableMonths.length === 0 && (
+                  <option value="">등록된 월 없음</option>
+                )}
+                {availableMonths.map((m) => (
+                  <option key={m} value={m}>{displayMonth(m)}</option>
                 ))}
               </select>
+              {isAdmin && (
+                <button
+                  onClick={() => setShowAddForm((v) => !v)}
+                  className="flex items-center gap-1 bg-black text-white text-sm px-4 py-2 hover:bg-gray-800 transition-colors"
+                >
+                  <Plus size={14} />
+                  항목 추가
+                </button>
+              )}
             </div>
           </div>
 
+          {/* 관리자 추가 폼 */}
+          {isAdmin && showAddForm && (
+            <div className="mb-6 rounded-2xl border border-gray-200 bg-gray-50 p-6 space-y-4">
+              <div className="flex items-center justify-between">
+                <p className="text-sm font-medium text-gray-700">새 지출 항목 추가</p>
+                <button onClick={() => { setShowAddForm(false); setNewLines([emptyLine()]); setNewMonth(''); }}
+                  className="text-gray-400 hover:text-gray-600">
+                  <X size={16} />
+                </button>
+              </div>
+
+              {/* 월 입력 (공통) */}
+              <div className="flex items-center gap-3">
+                <label className="text-xs text-gray-500 whitespace-nowrap">지출 월 *</label>
+                <input
+                  type="text"
+                  placeholder="예: 2026-09"
+                  value={newMonth}
+                  onChange={(e) => setNewMonth(e.target.value)}
+                  className="w-40 border border-gray-300 bg-white px-3 py-2 text-sm outline-none focus:border-black"
+                />
+                <span className="text-xs text-gray-400">형식: YYYY-MM</span>
+              </div>
+
+              {/* 항목 헤더 */}
+              <div className="grid grid-cols-[1fr_160px_180px_28px] gap-2 text-xs text-gray-400 px-1">
+                <span>지출 항목 *</span>
+                <span>금액 *</span>
+                <span>비고</span>
+                <span />
+              </div>
+
+              {/* 항목 행들 */}
+              <div className="space-y-2">
+                {newLines.map((line, idx) => (
+                  <div key={idx} className="grid grid-cols-[1fr_160px_180px_28px] gap-2 items-center">
+                    <input
+                      type="text"
+                      placeholder="지출 항목명"
+                      value={line.item}
+                      onChange={(e) => updateLine(idx, 'item', e.target.value)}
+                      className="border border-gray-300 bg-white px-3 py-2 text-sm outline-none focus:border-black"
+                    />
+                    <input
+                      type="text"
+                      placeholder="1,000,000원"
+                      value={line.amount}
+                      onChange={(e) => updateLine(idx, 'amount', e.target.value)}
+                      className="border border-gray-300 bg-white px-3 py-2 text-sm outline-none focus:border-black"
+                    />
+                    <input
+                      type="text"
+                      placeholder="비고 (선택)"
+                      value={line.note}
+                      onChange={(e) => updateLine(idx, 'note', e.target.value)}
+                      className="border border-gray-300 bg-white px-3 py-2 text-sm outline-none focus:border-black"
+                    />
+                    <button
+                      onClick={() => removeLine(idx)}
+                      disabled={newLines.length === 1}
+                      className="text-gray-300 hover:text-red-500 disabled:opacity-20 transition-colors"
+                      title="행 삭제"
+                    >
+                      <X size={14} />
+                    </button>
+                  </div>
+                ))}
+              </div>
+
+              {/* 행 추가 버튼 */}
+              <button
+                onClick={addLine}
+                className="flex items-center gap-1 text-sm text-gray-500 hover:text-black transition-colors border border-dashed border-gray-300 hover:border-gray-500 px-4 py-2 w-full justify-center"
+              >
+                <Plus size={14} />
+                항목 행 추가
+              </button>
+
+              <div className="flex items-center gap-3 pt-2 border-t border-gray-200">
+                <button
+                  onClick={handleAdd}
+                  disabled={saving}
+                  className="bg-black text-white text-sm px-6 py-2 hover:bg-gray-800 disabled:opacity-50 transition-colors"
+                >
+                  {saving ? '저장 중…' : `${newLines.filter(l => l.item.trim() && l.amount.trim()).length}건 저장`}
+                </button>
+                <button
+                  onClick={() => { setShowAddForm(false); setNewLines([emptyLine()]); setNewMonth(''); }}
+                  className="border border-gray-300 text-sm px-5 py-2 hover:bg-gray-100 transition-colors"
+                >
+                  취소
+                </button>
+                <span className="text-xs text-gray-400 ml-auto">항목·금액이 비어있는 행은 저장 시 건너뜁니다.</span>
+              </div>
+            </div>
+          )}
+
           <div className="overflow-x-auto">
-            <table className="w-full border-t-2 border-black min-w-[800px]">
+            <table className="w-full border-t-2 border-black min-w-[700px]">
               <thead>
                 <tr className="border-b border-gray-200">
-                  <th className="bg-gray-50 px-6 py-5 text-left font-medium w-[140px]">월</th>
+                  <th className="bg-gray-50 px-6 py-5 text-left font-medium w-[120px]">월</th>
                   <th className="px-6 py-5 text-left font-medium">지출 항목</th>
-                  <th className="px-6 py-5 text-right font-medium w-[180px]">금액</th>
-                  <th className="px-6 py-5 text-right font-medium w-[220px]">비고</th>
+                  <th className="px-6 py-5 text-right font-medium w-[160px]">금액</th>
+                  <th className="px-6 py-5 text-right font-medium w-[200px]">비고</th>
+                  {isAdmin && <th className="px-4 py-5 w-[80px]" />}
                 </tr>
               </thead>
               <tbody className="text-sm md:text-base font-light">
                 {loading ? (
                   <tr>
-                    <td colSpan={4} className="px-6 py-10 text-center text-gray-400">
-                      데이터를 불러오는 중입니다.
+                    <td colSpan={isAdmin ? 5 : 4} className="px-6 py-10 text-center text-gray-400">
+                      데이터를 불러오는 중입니다…
                     </td>
                   </tr>
                 ) : expenses.length > 0 ? (
-                  expenses.map((row, index) => (
-                    <tr key={`${row.month}-${index}`} className="border-b border-gray-200">
-                      <td className="bg-gray-50 px-6 py-5">{row.month}</td>
-                      <td className="px-6 py-5">{row.item}</td>
-                      <td className="px-6 py-5 text-right whitespace-nowrap tabular-nums">{row.amount}</td>
-                      <td className="px-6 py-5 text-right whitespace-nowrap">{row.note}</td>
+                  expenses.map((row) => (
+                    <tr key={row.id} className="border-b border-gray-200 group">
+                      <td className="bg-gray-50 px-6 py-4 text-sm">{row.month}</td>
+                      {editingId === row.id ? (
+                        <>
+                          <td className="px-4 py-3">
+                            <input
+                              value={editItem}
+                              onChange={(e) => setEditItem(e.target.value)}
+                              className="w-full border border-gray-300 px-2 py-1 text-sm outline-none focus:border-black"
+                            />
+                          </td>
+                          <td className="px-4 py-3">
+                            <input
+                              value={editAmount}
+                              onChange={(e) => setEditAmount(e.target.value)}
+                              className="w-full border border-gray-300 px-2 py-1 text-sm text-right outline-none focus:border-black"
+                            />
+                          </td>
+                          <td className="px-4 py-3">
+                            <input
+                              value={editNote}
+                              onChange={(e) => setEditNote(e.target.value)}
+                              className="w-full border border-gray-300 px-2 py-1 text-sm text-right outline-none focus:border-black"
+                            />
+                          </td>
+                          <td className="px-4 py-3">
+                            <div className="flex gap-1 justify-center">
+                              <button
+                                onClick={() => handleSaveEdit(row.id)}
+                                disabled={saving}
+                                className="p-1 text-green-600 hover:text-green-800"
+                                title="저장"
+                              >
+                                <Check size={16} />
+                              </button>
+                              <button
+                                onClick={() => setEditingId(null)}
+                                className="p-1 text-gray-400 hover:text-gray-600"
+                                title="취소"
+                              >
+                                <X size={16} />
+                              </button>
+                            </div>
+                          </td>
+                        </>
+                      ) : (
+                        <>
+                          <td className="px-6 py-4">{row.item}</td>
+                          <td className="px-6 py-4 text-right whitespace-nowrap tabular-nums">{row.amount}</td>
+                          <td className="px-6 py-4 text-right whitespace-nowrap">{row.note}</td>
+                          {isAdmin && (
+                            <td className="px-4 py-4">
+                              <div className="flex gap-1 justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                                <button
+                                  onClick={() => startEdit(row)}
+                                  className="p-1 text-gray-400 hover:text-black"
+                                  title="수정"
+                                >
+                                  <Pencil size={14} />
+                                </button>
+                                <button
+                                  onClick={() => handleDelete(row.id)}
+                                  className="p-1 text-gray-400 hover:text-red-600"
+                                  title="삭제"
+                                >
+                                  <Trash2 size={14} />
+                                </button>
+                              </div>
+                            </td>
+                          )}
+                        </>
+                      )}
                     </tr>
                   ))
                 ) : (
                   <tr>
-                    <td colSpan={4} className="px-6 py-10 text-center text-gray-400">
-                      선택한 월의 지출 내역이 없습니다.
+                    <td colSpan={isAdmin ? 5 : 4} className="px-6 py-10 text-center text-gray-400">
+                      {availableMonths.length === 0
+                        ? '아직 등록된 지출 내역이 없습니다.'
+                        : '선택한 월의 지출 내역이 없습니다.'}
                     </td>
                   </tr>
                 )}
               </tbody>
             </table>
           </div>
-
-          <p className="mt-4 text-sm text-red-700 font-light">
-            ※ 현재는 예시 데이터로, 실제 운영 시 월 기준으로 운영비 데이터를 조회합니다.
-          </p>
         </section>
 
         <section>
