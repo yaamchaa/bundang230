@@ -370,7 +370,7 @@ function OrganizationTab() {
                 </div>
                 <div className="border-b border-gray-100 pb-4">
                   <p className="text-black mb-1">준비위 부위원장</p>
-                  <p>1명</p>
+                  <p>2명</p>
                   <p className="text-gray-500">위원장 유고 시 대표, 총회 및 이사회 의장 보좌, 주요 의사결정 협력 총괄</p>
                 </div>
                 <div className="border-b border-gray-100 pb-4">
@@ -559,7 +559,7 @@ function DevelopmentTab() {
                 </p>
                 <h3 className="text-[30px] font-light leading-[42px]">준비위 운영비
                   <p className="text-lg font-light leading-7 text-black">
-                  (신탁방식은 별도 지침 작성 필요)
+                  (사업시행자방식은 별도 지침 작성 필요)
                   </p>
                 </h3>
               </header>
