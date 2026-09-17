@@ -1,6 +1,7 @@
 ﻿import { defineConfig } from 'vite'
 import path from 'path'
 import react from '@vitejs/plugin-react'
+import tailwindcss from '@tailwindcss/vite'
 
 function figmaAssetResolver() {
   return {
@@ -18,14 +19,12 @@ export default defineConfig({
   base: '/bundang230/',
   plugins: [
     figmaAssetResolver(),
+    tailwindcss(),
     react(),
   ],
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src/app'),
     },
-  },
-  css: {
-    postcss: false,
   },
 })
