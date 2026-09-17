@@ -331,7 +331,7 @@ function OrganizationTab() {
                 </tr>
                 <tr className="border-b border-gray-200">
                   <td className="bg-gray-50 px-6 py-5">사무원</td>
-                  <td className="px-6 py-5">1명</td>
+                  <td className="px-6 py-5">2명</td>
                   <td className="px-6 py-5">실무 처리 직원</td>
                 </tr>
                 <tr className="border-b border-gray-200">
